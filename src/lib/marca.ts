@@ -43,6 +43,25 @@ export function marcaDoAmbiente(): Marca {
 }
 
 /**
+ * Slug de uma empresa existente, para o link "Ver um exemplo" da home.
+ *
+ * Retorna `null` quando não há nenhuma — aí o link some, em vez de apontar para
+ * um 404. Não dá para fixar um slug de seed aqui: o seed é opcional, e um banco
+ * real tem só as empresas que os contadores criaram.
+ */
+export async function slugDeExemplo(): Promise<string | null> {
+  if (!temBancoConfigurado()) return marcaDoAmbiente().slug;
+
+  const registro = await getPrisma().contador.findFirst({
+    where: { ativo: true },
+    orderBy: { criadoEm: "asc" },
+    select: { slug: true },
+  });
+
+  return registro?.slug ?? null;
+}
+
+/**
  * Carrega a marca de um slug. Retorna `null` quando o slug não existe.
  *
  * Sem banco configurado, devolve o fallback de ambiente para qualquer slug —

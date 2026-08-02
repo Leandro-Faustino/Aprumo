@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import type { Marca } from "@/lib/marca";
 
 import { salvarEmpresa, type EstadoPainel } from "./acoes";
+import { CampoLogo } from "./campo-logo";
 
 const INICIAL: EstadoPainel = { status: "inicial" };
 
@@ -19,9 +20,11 @@ const INICIAL: EstadoPainel = { status: "inicial" };
 export function FormularioEmpresa({
   empresa,
   urlBase,
+  usuarioId,
 }: {
   empresa: Marca | null;
   urlBase: string;
+  usuarioId: string;
 }) {
   const [estado, acao, salvando] = useActionState(salvarEmpresa, INICIAL);
   const [slug, setSlug] = useState(empresa?.slug ?? "");
@@ -98,13 +101,7 @@ export function FormularioEmpresa({
           defaultValue={empresa?.crc ?? ""}
           placeholder="SP-123456/O-4"
         />
-        <Campo
-          id="logoUrl"
-          rotulo="Endereço da sua logo"
-          defaultValue={empresa?.logoUrl ?? ""}
-          placeholder="https://..."
-          ajuda="Sem logo, aparece o nome do escritório."
-        />
+        <CampoLogo usuarioId={usuarioId} valorInicial={empresa?.logoUrl ?? null} />
         <Campo
           id="rodape"
           rotulo="Rodapé"

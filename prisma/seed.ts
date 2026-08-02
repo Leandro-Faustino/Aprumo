@@ -37,10 +37,14 @@ async function main() {
       rodape: "Silva Contabilidade — Rua das Acácias, 120, São Paulo/SP",
       corPrimaria: "#0F766E",
     },
-    update: {},
+    // Sem isto, rodar de novo com SEED_OWNER_ID encontraria a linha pelo slug e
+    // não faria nada — o dono continuaria sendo o placeholder e a conta seguiria
+    // sem conseguir editar a empresa, que é justamente o que o comando promete.
+    update: { ownerId: OWNER_COMPLETO },
   });
 
   // Mínimo absoluto: sem logo, sem CRC, sem rodapé, sem WhatsApp (RF-32).
+  // Fica sempre com o placeholder: só uma empresa pode pertencer a cada conta.
   await prisma.contador.upsert({
     where: { slug: "minimo" },
     create: { ownerId: OWNER_MINIMO, slug: "minimo", marca: "Escritório Exemplo" },
@@ -56,7 +60,19 @@ async function main() {
 }
 
 main()
-  .catch((erro) => {
+  .catch((erro: unknown) => {
+    // `ownerId` é único (uma empresa por conta). Se a conta do SEED_OWNER_ID já
+    // criou a própria empresa pelo painel, a colisão é esperada — e o stack
+    // trace do Prisma não explica isso para quem só rodou o comando do README.
+    if (erro instanceof Error && "code" in erro && erro.code === "P2002") {
+      console.error(
+        "Esta conta já tem uma empresa própria. Cada conta só pode ter uma —\n" +
+          "apague a empresa existente no painel antes de vinculá-la ao exemplo,\n" +
+          "ou rode o seed sem SEED_OWNER_ID.",
+      );
+      process.exit(1);
+    }
+
     console.error(erro);
     process.exit(1);
   })

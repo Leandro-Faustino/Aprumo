@@ -43,7 +43,11 @@ export default async function Page() {
           </p>
         </div>
 
-        <FormularioEmpresa empresa={empresa} urlBase={await urlBase()} />
+        <FormularioEmpresa
+          empresa={empresa}
+          urlBase={await urlBase()}
+          usuarioId={sessao.usuarioId}
+        />
       </main>
     </div>
   );
