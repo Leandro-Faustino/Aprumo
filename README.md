@@ -127,6 +127,7 @@ ganha sua página em `/d/<slug>`.
 | `npm run build` | `prisma generate` + build de produção |
 | `npm test` | Testes do núcleo e de validação (91 casos) |
 | `npm run typecheck` | `tsc --noEmit` |
+| `npm run lint` | ESLint, sem tolerar avisos |
 | `npm run db:migrate` | Cria/aplica migration |
 | `npm run db:seed` | Popula contadores de exemplo |
 
