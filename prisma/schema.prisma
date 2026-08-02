@@ -51,7 +51,44 @@ model Contador {
   criadoEm     DateTime @default(now()) @map("criado_em")
   atualizadoEm DateTime @updatedAt @map("atualizado_em")
 
+  envios Envio[]
+
   @@map("contadores")
+}
+
+/// Placar: anotações do contador sobre a própria carteira.
+///
+/// LEIA ANTES DE MUDAR — isto NÃO é rastreamento e não pode virar rastreamento.
+///
+/// O produto continua sem saber se alguém abriu o link ou preencheu o
+/// diagnóstico: o cálculo roda no navegador do empresário e nada sai de lá
+/// (RNF-05/RF-23). Quem escreve cada linha daqui é o contador, à mão, sobre
+/// contatos que já são dele.
+///
+/// A diferença importa: um campo alimentado pela página do empresário seria
+/// telemetria, transformaria a tabela em base de leads e desmentiria a promessa
+/// exibida na própria tela ("nada é enviado, salvo ou compartilhado").
+model Envio {
+  id String @id @default(uuid())
+
+  contadorId String   @map("contador_id")
+  contador   Contador @relation(fields: [contadorId], references: [id], onDelete: Cascade)
+
+  /// Como o contador reconhece esse contato. Texto livre: iniciais servem.
+  contato String
+
+  /// "envio" (mandou o link) ou "telefone" (modo assistido).
+  canal String
+
+  /// Marcados à mão pelo contador conforme a conversa acontece.
+  respondeu Boolean @default(false)
+  conversa  Boolean @default(false)
+  trabalho  Boolean @default(false)
+
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  @@index([contadorId, criadoEm])
+  @@map("envios")
 }
 
 /// Candidatura à turma fundadora (camada comercial).

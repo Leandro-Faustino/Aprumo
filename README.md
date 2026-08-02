@@ -20,6 +20,7 @@ Supabase (Postgres + Auth) · Vitest
 | `/entrar` | Pública | Login por link mágico (sem senha) |
 | `/auth/confirmar` | Pública | Troca o token do e-mail por sessão |
 | `/painel` | **Autenticada** | Configuração da marca do contador (RF-30) |
+| `/painel/placar` | **Autenticada** | Anotações do contador sobre a própria carteira |
 | `/d/<slug>` | Pública | A página de diagnóstico — público: o **empresário** |
 
 As duas páginas públicas obedecem a regras opostas e não devem ser misturadas.
@@ -49,6 +50,23 @@ requisição de rede leva os números digitados.
 
 Autenticação não muda nada disso: ela protege a configuração de marca, não o
 diagnóstico. A página `/d/<slug>` continua pública e anônima — é o produto.
+
+## O placar não é um dashboard
+
+`/painel/placar` parece um painel de acompanhamento e não é. **O produto não
+sabe se alguém abriu o link ou preencheu o diagnóstico** — cada linha ali é
+escrita à mão pelo contador, sobre contatos que já são dele. É o
+`kit/placar.md` dentro do produto.
+
+A distinção não é semântica. Um único campo alimentado pela página do empresário
+transformaria a tabela em base de leads, exigiria telemetria e desmentiria a
+frase exibida na própria tela do cliente: *"nada é enviado, salvo ou
+compartilhado — nem com \<contador\>"*. Está escrito no schema, junto do modelo
+`Envio`, para que a próxima pessoa que mexer ali saiba o que está em jogo.
+
+Vale lembrar que o documento da oferta lista "quem quer software com painel,
+dashboard e integração" entre **para quem o produto não é**. Um placar manual
+cabe nesse posicionamento; um dashboard de rastreamento, não.
 
 ## Isolamento entre contadores
 
@@ -109,7 +127,7 @@ Sem Supabase configurado o produto sobe e a página de diagnóstico funciona
    é recusado pelo Supabase.
 5. Alinhe o histórico do Prisma com o banco.
 
-   As **três** migrations já foram aplicadas fora do Prisma, então marque cada
+   As **quatro** migrations já foram aplicadas fora do Prisma, então marque cada
    uma como aplicada em vez de rodá-las de novo — senão o Prisma tenta recriar
    objetos que já existem e falha:
 
@@ -117,11 +135,12 @@ Sem Supabase configurado o produto sobe e a página de diagnóstico funciona
 npx prisma migrate resolve --applied 20260802000000_inicial
 npx prisma migrate resolve --applied 20260802010000_storage_logos
 npx prisma migrate resolve --applied 20260802020000_candidaturas
+npx prisma migrate resolve --applied 20260802030000_envios
 
 npm run db:seed        # opcional: duas empresas de exemplo
 ```
 
-Confira com `npx prisma migrate status` — as três precisam aparecer como
+Confira com `npx prisma migrate status` — as quatro precisam aparecer como
 aplicadas antes de qualquer `db:migrate` futuro.
 
 Em um banco novo, do zero, o passo 5 inteiro vira `npm run db:migrate`.
@@ -140,7 +159,7 @@ ganha sua página em `/d/<slug>`.
 |---|---|
 | `npm run dev` | Servidor de desenvolvimento |
 | `npm run build` | `prisma generate` + build de produção |
-| `npm test` | Testes do núcleo e de validação (91 casos) |
+| `npm test` | Testes do núcleo, validação e placar (104 casos) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint, sem tolerar avisos |
 | `npm run db:migrate` | Cria/aplica migration |
@@ -188,6 +207,10 @@ Postgres — que testa a política em si, sem depender do cliente HTTP:
 | Outro contador inserindo empresa com `owner_id` falsificado | recusado, erro `42501` |
 | **Contador gravando logo na pasta de outro** | **recusado, erro `42501`** |
 | Contador gravando logo na própria pasta | aceito |
+| `anon` lendo o placar | 0 linhas |
+| Contador dono lendo o próprio placar | 1 linha |
+| **Outro contador lendo o placar alheio** | **0 linhas** |
+| Outro contador alterando o placar alheio | 0 linhas afetadas |
 
 ### Verificado em navegador real
 
