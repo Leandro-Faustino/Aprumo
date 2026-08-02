@@ -1,0 +1,44 @@
+// Aprumo — Diagnóstico de 90 dias
+//
+// ATENÇÃO / RF-23 + RNF-05:
+// Este banco armazena EXCLUSIVAMENTE dados de marca (white-label) do contador.
+// Nenhum dado financeiro do cliente final é modelado, trafegado ou persistido aqui.
+// O diagnóstico (RF-05, RF-06, RF-09) é calculado 100% no navegador.
+// Qualquer alteração que adicione campo financeiro a este schema viola RF-23.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// Bloco único de configuração white-label (RF-30).
+/// Trocar de cliente = criar/editar uma linha desta tabela, sem tocar em lógica ou estilo.
+model Contador {
+  id String @id @default(uuid())
+
+  /// Identificador da página pública: /d/<slug>
+  slug String @unique
+
+  /// Marca exibida no cabeçalho. Único campo obrigatório além do slug.
+  marca String
+
+  /// RF-32: opcionais — a página degrada sem eles, sem quebrar o layout.
+  crc      String?
+  logoUrl  String? @map("logo_url")
+  whatsapp String?
+  rodape   String?
+
+  /// Cor primária em hex (#RRGGBB). Tem default para nunca degradar o layout.
+  corPrimaria String @default("#0F766E") @map("cor_primaria")
+
+  ativo Boolean @default(true)
+
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+
+  @@map("contadores")
+}
