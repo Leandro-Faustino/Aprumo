@@ -12,6 +12,10 @@ Implementa os requisitos v0.4 (RF-09 revisado, seções 4.5 a 4.7).
 Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · Prisma 7 ·
 Supabase (Postgres + Auth) · Vitest
 
+> **O que está travado e por quê:** [`PENDENCIAS.md`](PENDENCIAS.md) — requisitos
+> que nunca foram lidos, decisões em aberto, acessos que faltam e verificações
+> externas. Nada lá se resolve escrevendo código.
+
 ## Rotas
 
 | Rota | Acesso | O que é |
