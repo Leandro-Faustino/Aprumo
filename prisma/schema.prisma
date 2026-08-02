@@ -53,3 +53,27 @@ model Contador {
 
   @@map("contadores")
 }
+
+/// Candidatura à turma fundadora (camada comercial).
+///
+/// Dado de contato de um contador interessado — não é dado financeiro de
+/// ninguém, então não conflita com RF-23/RNF-05. Continua valendo: nenhum
+/// número do diagnóstico de nenhum empresário passa por aqui.
+model Candidatura {
+  id String @id @default(uuid())
+
+  /// "Nome e escritório" chega num campo só, como no formulário.
+  nomeEscritorio String @map("nome_escritorio")
+  whatsapp       String
+
+  /// Faixa de porte, não número exato — qualificação, não cadastro.
+  clientesAtivos String @map("clientes_ativos")
+
+  /// Os dois campos que qualificam e pesquisam ao mesmo tempo.
+  origemUltimosClientes String @map("origem_ultimos_clientes")
+  empresaParaEnviar     String @map("empresa_para_enviar")
+
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  @@map("candidaturas")
+}
