@@ -83,6 +83,25 @@ export function Stack() {
         Valor declarado de cada item: <Falta>valor por item, defensável em voz alta</Falta>
       </p>
 
+      {/* Teto explícito na promessa (degrau 1 da escada de valor).
+          Sem isto, fica implícito que o programa resolve o crescimento — e a
+          frustração de "consegui três reuniões e não fechei nenhuma" vira
+          cancelamento no mês 4, com o contador concluindo que o degrau 1 não
+          funcionou. Anunciar o degrau seguinte sem construí-lo põe o teto e
+          prepara a venda; prometê-lo pronto seria o erro oposto. */}
+      <div className="mt-8 rounded-xl border border-slate-200 p-6 dark:border-slate-800">
+        <h3 className="font-semibold text-slate-900 dark:text-slate-50">
+          O que este programa não resolve
+        </h3>
+        <p className="mt-2 text-slate-600 dark:text-slate-300">
+          Ele resolve <span className="font-medium">pauta</span>: ter um motivo
+          técnico para ligar e uma conversa que começa em cima de um número.
+          Transformar essa conversa em proposta e honorário é o passo seguinte,
+          e ele ainda não existe — está sendo desenhado junto com os escritórios
+          fundadores.
+        </p>
+      </div>
+
       <div className="mt-10">
         <BotaoCta variante="secundario" />
       </div>

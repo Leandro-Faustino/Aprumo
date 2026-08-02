@@ -17,6 +17,7 @@ Supabase (Postgres + Auth) · Vitest
 | Rota | Acesso | O que é |
 |---|---|---|
 | `/` | Pública | Landing page comercial — público: o **contador** |
+| `/meu-escritorio` | Pública | Degrau 0: o contador roda o instrumento no próprio escritório |
 | `/entrar` | Pública | Login por link mágico (sem senha) |
 | `/auth/confirmar` | Pública | Troca o token do e-mail por sessão |
 | `/painel` | **Autenticada** | Configuração da marca do contador (RF-30) |
@@ -44,12 +45,71 @@ lá até uma chamada de rede, e não há rota de API, server action ou tabela qu
 receba os valores. É essa separação que faz a promessa "seus números ficam neste
 navegador" ser verificável no código, e não só uma frase na tela.
 
-Dois testes guardam isso: `whatsapp.test.ts` verifica que a mensagem de handoff
-não carrega valor algum, e o smoke test de browser confirma que nenhuma
-requisição de rede leva os números digitados.
+Três testes guardam isso:
+
+- `whatsapp.test.ts` — a mensagem de handoff não carrega valor algum;
+- o smoke test de browser — nenhuma requisição de rede leva os números digitados;
+- **`privacidade.test.ts` — o build falha se o núcleo do diagnóstico ganhar
+  qualquer primitiva de rede** (`fetch`, `sendBeacon`, `WebSocket`,
+  `"use server"`, cliente Supabase, analytics).
+
+O terceiro é o que importa a longo prazo. Uma garantia dessas raramente morre
+por decisão deliberada de violá-la: morre num `fetch` de telemetria acrescentado
+numa tarde, com boa intenção, por quem nunca leu este arquivo. A promessa deixa
+de ser política e passa a ser barreira de CI — e a trava foi verificada
+injetando uma violação de propósito e conferindo que ela acusa arquivo e linha.
+
+Se esse teste falhar, a resposta quase nunca é adicionar exceção. É perguntar
+por que dado financeiro precisa sair do dispositivo e, se precisar mesmo, mudar
+a promessa pública **primeiro** — incluindo a frase na tela do cliente.
 
 Autenticação não muda nada disso: ela protege a configuração de marca, não o
 diagnóstico. A página `/d/<slug>` continua pública e anônima — é o produto.
+
+## Onde cada coisa fica na escada de valor
+
+O produto tem degraus, e saber disso muda o que se constrói agora.
+
+| Degrau | O que é | Estado |
+|---|---|---|
+| **0** | O contador roda o instrumento no **próprio escritório** (`/meu-escritorio`) | ✅ construído |
+| **1** | Pauta Técnica em 90 Dias: instrumento com a marca dele + Kit de Pauta | ✅ construído |
+| **2** | Da pauta ao contrato: proposta, escopo e honorário | ⛔ não construir |
+| **3** | Rotina gerida (a operação rodada pelo escritório) | ⛔ não construir |
+| **4** | Escritório grande: painel, histórico comparado, PDF, multiusuário | ⛔ não construir |
+| **5** | Licenciamento para redes e sistemas contábeis | ⛔ não construir |
+
+**Painel, PDF e histórico não foram descartados — são o degrau 4.** Foram
+cortados para escritório de 1 a 15 pessoas, onde custam caro e valem pouco. Para
+um escritório de 40 pessoas com três sócios o valor inverte. A diferença entre
+"cortado" e "degrau 4" é como se responde quando alguém pede na conversa de 30
+minutos.
+
+Isso **não** vai para a landing page: o documento de oferta proíbe prometer o
+painel do contador, e a página lista "quem quer software com painel, dashboard e
+integração" entre para quem o produto não é.
+
+### A fronteira entre o kit e o degrau 2
+
+Elas se confundem com facilidade, e confundir custa dinheiro nos dois sentidos —
+ou o degrau 2 vai de graça dentro do degrau 1, ou o kit perde algo de que o
+degrau 1 precisa.
+
+- **Kit (degrau 1):** como conduzir a conversa. Mapa de contatos, mensagens,
+  modo assistido, roteiro da reunião, calendário, placar.
+- **Degrau 2:** como precificar e propor o serviço que nasce da conversa.
+  Modelo de proposta, faixa de honorário, escopo.
+
+Roteiro de conversa é degrau 1. Modelo de proposta é degrau 2.
+
+### O degrau que a arquitetura fecha
+
+Benchmark comparativo entre carteiras seria o degrau mais valioso e defensável
+da escada — e o RNF-05 o proíbe. Isso é tradeoff assumido, não omissão.
+
+A decisão registrada é **manter o bloqueio**, e ela não depende de ninguém
+lembrar: `src/lib/diagnostico/privacidade.test.ts` falha o build se o núcleo do
+diagnóstico ganhar qualquer primitiva de rede. Ver a seção seguinte.
 
 ## O placar não é um dashboard
 
@@ -159,7 +219,7 @@ ganha sua página em `/d/<slug>`.
 |---|---|
 | `npm run dev` | Servidor de desenvolvimento |
 | `npm run build` | `prisma generate` + build de produção |
-| `npm test` | Testes do núcleo, validação e placar (104 casos) |
+| `npm test` | Testes do núcleo, validação, placar e a trava de privacidade |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run lint` | ESLint, sem tolerar avisos |
 | `npm run db:migrate` | Cria/aplica migration |

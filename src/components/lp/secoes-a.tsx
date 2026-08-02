@@ -73,9 +73,13 @@ export function Problema() {
 export function Mecanismo() {
   return (
     <Secao id="demo">
-      <TituloSecao>Preencha três campos. É exatamente o que o seu cliente vai ver.</TituloSecao>
+      <TituloSecao>Faça com os números do seu escritório.</TituloSecao>
       <p className="mt-4 text-slate-600 dark:text-slate-300">
-        Use números de um cliente seu, os do seu próprio escritório, ou invente.
+        Você também é dono de empresa. Também tem entrada, saída e uma retirada
+        que sai no fim do mês sem passar por conta nenhuma. São três campos e é
+        exatamente o que o seu cliente vai ver.
+      </p>
+      <p className="mt-3 text-slate-600 dark:text-slate-300">
         Nada do que você digitar sai deste navegador.
       </p>
 
@@ -91,10 +95,20 @@ export function Mecanismo() {
         <p className="mt-2 font-medium text-slate-900 dark:text-slate-50">
           É essa frase que devolve a conversa para você.
         </p>
+        <p className="mt-4 text-slate-600 dark:text-slate-300">
+          E se o número acima te incomodou um pouco: é esse incômodo que o seu
+          cliente vai sentir. Ele é o começo da conversa, não o fim dela.
+        </p>
       </div>
 
-      <div className="mt-10">
+      <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3">
         <BotaoCta variante="secundario" />
+        <a
+          href="/meu-escritorio"
+          className="text-slate-600 underline underline-offset-4 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
+        >
+          Fazer com calma, numa página só disso
+        </a>
       </div>
     </Secao>
   );
