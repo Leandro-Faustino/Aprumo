@@ -85,21 +85,31 @@ Sem Supabase configurado o produto sobe e a página de diagnóstico funciona
 
 ### Ligando o Supabase
 
-1. Crie um projeto em [supabase.com](https://supabase.com).
-2. Em *Project Settings → API*, copie a URL e a chave pública (anon/publishable)
-   para `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
-3. Em *Project Settings → Database → Connection string → URI*, copie para
+**O projeto já existe e o schema já foi aplicado:** `aprumo`, ref
+`rnbbbjozioxzpreylmle`, região `sa-east-1`. Falta apenas conectar a aplicação.
+
+1. Em *Project Settings → API*, copie para o `.env`:
+   - `NEXT_PUBLIC_SUPABASE_URL` = `https://rnbbbjozioxzpreylmle.supabase.co`
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` = a chave anon/publishable
+2. Em *Project Settings → Database → Connection string → URI*, copie para
    `DATABASE_URL` (porta `6543`, do pooler, em serverless; `5432` para migrations).
-4. Defina `NEXT_PUBLIC_SITE_URL` com a URL pública do site.
-5. Em *Authentication → URL Configuration*, adicione
+   A senha do banco não é recuperável depois da criação — se não a tiver, use
+   *Reset database password* na mesma tela.
+3. Defina `NEXT_PUBLIC_SITE_URL` com a URL pública do site.
+4. Em *Authentication → URL Configuration*, adicione
    `<SITE_URL>/auth/confirmar` às **Redirect URLs**. Sem isso o link do e-mail
    é recusado pelo Supabase.
-6. Aplique o schema:
+5. Alinhe o histórico do Prisma com o banco:
 
 ```bash
-npm run db:migrate     # cria a tabela e as políticas de RLS
+# A migration já foi aplicada fora do Prisma, então marque-a como aplicada
+# em vez de rodá-la de novo — senão o Prisma tenta recriar a tabela e falha.
+npx prisma migrate resolve --applied 20260802000000_inicial
+
 npm run db:seed        # opcional: duas empresas de exemplo
 ```
+
+Em um banco novo, do zero, o passo 5 vira simplesmente `npm run db:migrate`.
 
 A partir daí, cada contador que entra cria a própria empresa pelo `/painel` e
 ganha sua página em `/d/<slug>`.
@@ -143,26 +153,44 @@ A regra de nomenclatura do RF-09 — nenhum CTA pode conter verbo imperativo de
 ação financeira — é um teste automatizado, não um comentário. Um texto novo com
 "reduza", "negocie" ou "controle" quebra a suíte.
 
-## O que o login ainda NÃO teve verificado
+## O que está verificado, e o que não está
 
-Esta parte foi escrita sem nenhuma instância Supabase disponível. O que está
-verificado e o que não está:
+### Verificado contra o Postgres real
 
-**Verificado em navegador real:** `/painel` sem sessão redireciona para
-`/entrar` (inclusive com o proxy desligado, provando que o DAL segura sozinho);
-a tela de login renderiza e valida o e-mail; sem Supabase o envio avisa em vez de
-quebrar; a página de diagnóstico segue intacta. Mais 91 testes automatizados,
-entre eles a barreira contra redirecionamento aberto e as regras de slug.
+Projeto `aprumo` (`rnbbbjozioxzpreylmle`, região `sa-east-1`).
 
-**NÃO verificado, porque exige uma instância de verdade:** o envio do e-mail, o
-link mágico chegando e sendo trocado por sessão, o `upsert` da empresa no banco,
-a renovação de token pelo proxy, e as políticas de RLS de fato barrando acesso
-pela chave anônima. A migration também nunca foi aplicada contra um Postgres —
-foi gerada offline com `prisma migrate diff`.
+A migration foi aplicada e **rodou limpa**: tabela criada, RLS ativo, 4
+políticas. As políticas foram exercitadas assumindo cada papel dentro do
+Postgres — que testa a política em si, sem depender do cliente HTTP:
 
-Ou seja: o caminho de acesso negado está testado; o caminho de acesso concedido
-está escrito, mas não exercitado. Ao ligar o Supabase, esses são os pontos a
-conferir primeiro.
+| Cenário | Resultado |
+|---|---|
+| `anon` lendo a tabela | 0 linhas |
+| Contador dono lendo a própria empresa | 1 linha |
+| **Outro contador lendo a empresa alheia** | **0 linhas** |
+| Outro contador tentando alterar a empresa alheia | 0 linhas afetadas |
+| Outro contador inserindo empresa com `owner_id` falsificado | recusado, erro `42501` |
+
+### Verificado em navegador real
+
+`/painel` sem sessão redireciona para `/entrar` — inclusive com o proxy
+desligado, provando que o DAL segura sozinho. A tela de login renderiza e valida
+o e-mail, a ausência de Supabase avisa em vez de quebrar, e a página de
+diagnóstico segue intacta. Mais 91 testes automatizados.
+
+### NÃO verificado
+
+O fluxo de login de ponta a ponta: envio do e-mail, o link mágico virando
+sessão, o `upsert` da empresa via Prisma e a renovação de token pelo proxy.
+
+O motivo não é falta de instância — é que o ambiente onde este código foi
+desenvolvido bloqueia conexões de saída para o domínio do Supabase (`403` no
+CONNECT do proxy de rede). A aplicação nunca conseguiu falar com o projeto
+daqui. Rodando na sua máquina ou em deploy, esse bloqueio não existe.
+
+Resumindo: a camada de banco está provada, a de aplicação está provada no
+caminho de acesso negado, e o caminho de acesso concedido continua sem
+exercício.
 
 ## Premissas que precisam da sua confirmação
 
