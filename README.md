@@ -16,11 +16,19 @@ Supabase (Postgres + Auth) · Vitest
 
 | Rota | Acesso | O que é |
 |---|---|---|
-| `/` | Pública | Entrada do produto |
+| `/` | Pública | Landing page comercial — público: o **contador** |
 | `/entrar` | Pública | Login por link mágico (sem senha) |
 | `/auth/confirmar` | Pública | Troca o token do e-mail por sessão |
 | `/painel` | **Autenticada** | Configuração da marca do contador (RF-30) |
-| `/d/<slug>` | Pública | A página de diagnóstico que o cliente final abre |
+| `/d/<slug>` | Pública | A página de diagnóstico — público: o **empresário** |
+
+As duas páginas públicas obedecem a regras opostas e não devem ser misturadas.
+A `/` é camada comercial: headline, garantias, preço, CTA de venda. A `/d/<slug>`
+é o produto: sem headline, sem prova social, sem CTA de venda, marca do
+escritório em cima e a nossa no rodapé. A landing page está estruturada em
+`src/components/lp/`, e tudo que depende das dez entrevistas de descoberta ou de
+verificação externa está centralizado em `src/lib/lp.ts` — enquanto for `null`,
+aparece na tela como pendência visível, de propósito.
 
 ## A decisão de arquitetura que explica o resto
 
@@ -99,17 +107,24 @@ Sem Supabase configurado o produto sobe e a página de diagnóstico funciona
 4. Em *Authentication → URL Configuration*, adicione
    `<SITE_URL>/auth/confirmar` às **Redirect URLs**. Sem isso o link do e-mail
    é recusado pelo Supabase.
-5. Alinhe o histórico do Prisma com o banco:
+5. Alinhe o histórico do Prisma com o banco.
+
+   As **três** migrations já foram aplicadas fora do Prisma, então marque cada
+   uma como aplicada em vez de rodá-las de novo — senão o Prisma tenta recriar
+   objetos que já existem e falha:
 
 ```bash
-# A migration já foi aplicada fora do Prisma, então marque-a como aplicada
-# em vez de rodá-la de novo — senão o Prisma tenta recriar a tabela e falha.
 npx prisma migrate resolve --applied 20260802000000_inicial
+npx prisma migrate resolve --applied 20260802010000_storage_logos
+npx prisma migrate resolve --applied 20260802020000_candidaturas
 
 npm run db:seed        # opcional: duas empresas de exemplo
 ```
 
-Em um banco novo, do zero, o passo 5 vira simplesmente `npm run db:migrate`.
+Confira com `npx prisma migrate status` — as três precisam aparecer como
+aplicadas antes de qualquer `db:migrate` futuro.
+
+Em um banco novo, do zero, o passo 5 inteiro vira `npm run db:migrate`.
 
 A partir daí, cada contador que entra cria a própria empresa pelo `/painel` e
 ganha sua página em `/d/<slug>`.
@@ -171,6 +186,8 @@ Postgres — que testa a política em si, sem depender do cliente HTTP:
 | **Outro contador lendo a empresa alheia** | **0 linhas** |
 | Outro contador tentando alterar a empresa alheia | 0 linhas afetadas |
 | Outro contador inserindo empresa com `owner_id` falsificado | recusado, erro `42501` |
+| **Contador gravando logo na pasta de outro** | **recusado, erro `42501`** |
+| Contador gravando logo na própria pasta | aceito |
 
 ### Verificado em navegador real
 
