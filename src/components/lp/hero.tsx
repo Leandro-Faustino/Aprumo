@@ -7,13 +7,20 @@ import { Falta } from "./marcadores";
 export const CTA_TEXTO = "Quero uma das dez vagas";
 export const CTA_DESTINO = "#candidatura";
 
-export function BotaoCta({ variante = "primario" }: { variante?: "primario" | "secundario" }) {
+export function BotaoCta({
+  variante = "primario",
+  destino = CTA_DESTINO,
+}: {
+  variante?: "primario" | "secundario";
+  /** Fora da landing page a âncora não existe — passe o caminho completo. */
+  destino?: string;
+}) {
   const base =
     "inline-flex items-center justify-center rounded-lg px-6 py-3.5 font-medium transition";
 
   return (
     <a
-      href={CTA_DESTINO}
+      href={destino}
       className={
         variante === "primario"
           ? `${base} bg-[#0F766E] text-white hover:brightness-110`

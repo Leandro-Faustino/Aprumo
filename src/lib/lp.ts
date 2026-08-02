@@ -20,6 +20,13 @@ export type Pendencia = {
 };
 
 export const PENDENTE = {
+  /**
+   * Nome de marca do degrau 0. O degrau 1 tem nome ("Pauta Técnica em 90
+   * Dias"); este não tem nenhum, e o documento da escada lista isso como
+   * decisão em aberto. A página usa um título descritivo até lá — inventar
+   * marca não é decisão de implementação.
+   */
+  nomeDegrau0: null as string | null,
   precoFundador: null as string | null,
   precoTabela: null as string | null,
   dataTabelaEntraEmVigor: null as string | null,
