@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 
 import { marcaSchema, type Marca } from "./marca";
+import type { Canal, Envio as EnvioPlacar } from "./placar";
 import { getPrisma, temBancoConfigurado } from "./prisma";
 import { usuarioAtual } from "./supabase/servidor";
 
@@ -74,6 +75,81 @@ export async function minhaEmpresa(): Promise<Marca | null> {
 
   const validado = marcaSchema.safeParse(registro);
   return validado.success ? validado.data : null;
+}
+
+/**
+ * Anotações do placar do contador logado, mais recentes primeiro.
+ *
+ * O filtro passa por `contador.ownerId` — nunca por um id de contador recebido
+ * como parâmetro. Vale a mesma regra do resto do DAL.
+ */
+export async function meusEnvios(): Promise<EnvioPlacar[]> {
+  const sessao = await exigirSessao();
+  if (!temBancoConfigurado()) return [];
+
+  return getPrisma().envio.findMany({
+    where: { contador: { ownerId: sessao.usuarioId } },
+    orderBy: { criadoEm: "desc" },
+    select: {
+      id: true,
+      contato: true,
+      canal: true,
+      respondeu: true,
+      conversa: true,
+      trabalho: true,
+      criadoEm: true,
+    },
+  });
+}
+
+export async function registrarEnvio(contato: string, canal: Canal): Promise<boolean> {
+  const sessao = await exigirSessao();
+  if (!temBancoConfigurado()) return false;
+
+  const contador = await getPrisma().contador.findUnique({
+    where: { ownerId: sessao.usuarioId },
+    select: { id: true },
+  });
+  if (!contador) return false;
+
+  await getPrisma().envio.create({
+    data: { contadorId: contador.id, contato, canal },
+  });
+  return true;
+}
+
+/**
+ * Alterna um marcador de uma anotação.
+ *
+ * `updateMany` com a condição do dono, e não `update` por id: assim um id de
+ * outro contador simplesmente não casa com o filtro e atualiza zero linhas, em
+ * vez de precisar de uma checagem separada que alguém pode esquecer de fazer.
+ */
+export async function alternarMarcador(
+  envioId: string,
+  campo: "respondeu" | "conversa" | "trabalho",
+  valor: boolean,
+): Promise<boolean> {
+  const sessao = await exigirSessao();
+  if (!temBancoConfigurado()) return false;
+
+  const { count } = await getPrisma().envio.updateMany({
+    where: { id: envioId, contador: { ownerId: sessao.usuarioId } },
+    data: { [campo]: valor },
+  });
+
+  return count > 0;
+}
+
+export async function apagarEnvio(envioId: string): Promise<boolean> {
+  const sessao = await exigirSessao();
+  if (!temBancoConfigurado()) return false;
+
+  const { count } = await getPrisma().envio.deleteMany({
+    where: { id: envioId, contador: { ownerId: sessao.usuarioId } },
+  });
+
+  return count > 0;
 }
 
 export type ResultadoSalvar =
