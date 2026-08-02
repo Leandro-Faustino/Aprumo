@@ -260,10 +260,12 @@ function Resultado({
         )}
       </div>
 
+      {/* `py-3 -my-3` dá 44px de área de toque sem mudar o espaçamento visual —
+          o alvo cresce, o layout não. */}
       <button
         type="button"
         onClick={aoRecomecar}
-        className="text-sm text-slate-500 underline underline-offset-4 transition hover:text-slate-900 dark:hover:text-slate-200"
+        className="-my-3 py-3 text-sm text-slate-500 underline underline-offset-4 transition hover:text-slate-900 dark:hover:text-slate-200"
       >
         Refazer com outros números
       </button>

@@ -20,6 +20,17 @@ datasource db {
 model Contador {
   id String @id @default(uuid())
 
+  /// Dono da empresa: o `id` do usuário em `auth.users` (Supabase Auth).
+  ///
+  /// `@unique` implementa "uma empresa por conta". Toda leitura e escrita
+  /// autenticada é filtrada por este campo no DAL (`src/lib/dal.ts`) — é ele
+  /// que garante que um contador nunca alcança a empresa de outro.
+  ///
+  /// Sem chave estrangeira porque `auth.users` pertence ao schema do Supabase,
+  /// fora do controle deste schema. A integridade é mantida pelo fluxo: só o
+  /// DAL escreve aqui, e sempre com o id do usuário já autenticado.
+  ownerId String @unique @map("owner_id") @db.Uuid
+
   /// Identificador da página pública: /d/<slug>
   slug String @unique
 
@@ -41,4 +52,28 @@ model Contador {
   atualizadoEm DateTime @updatedAt @map("atualizado_em")
 
   @@map("contadores")
+}
+
+/// Candidatura à turma fundadora (camada comercial).
+///
+/// Dado de contato de um contador interessado — não é dado financeiro de
+/// ninguém, então não conflita com RF-23/RNF-05. Continua valendo: nenhum
+/// número do diagnóstico de nenhum empresário passa por aqui.
+model Candidatura {
+  id String @id @default(uuid())
+
+  /// "Nome e escritório" chega num campo só, como no formulário.
+  nomeEscritorio String @map("nome_escritorio")
+  whatsapp       String
+
+  /// Faixa de porte, não número exato — qualificação, não cadastro.
+  clientesAtivos String @map("clientes_ativos")
+
+  /// Os dois campos que qualificam e pesquisam ao mesmo tempo.
+  origemUltimosClientes String @map("origem_ultimos_clientes")
+  empresaParaEnviar     String @map("empresa_para_enviar")
+
+  criadoEm DateTime @default(now()) @map("criado_em")
+
+  @@map("candidaturas")
 }

@@ -32,5 +32,12 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # `--max-warnings 0` porque hoje estamos em zero: deixar aviso passar é
+      # como se acostuma a ignorá-los. `--report-unused-disable-directives`
+      # impede que um `eslint-disable` sobreviva depois de deixar de ser
+      # necessário, virando permissão silenciosa.
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         run: npm run build
