@@ -210,6 +210,26 @@ Resumindo: a camada de banco está provada, a de aplicação está provada no
 caminho de acesso negado, e o caminho de acesso concedido continua sem
 exercício.
 
+## Divergência entre o documento de oferta e o produto
+
+O documento da landing page descreve o instrumento como sendo de **cinco
+campos** ("cinco números que ele já tem"). O produto tem **três**: quanto
+entrou, quanto saiu e o saldo em caixa — este último opcional.
+
+A copy da página foi escrita seguindo o produto, não o documento, por um motivo
+prático: a demo funcional está na mesma página, alguns pixels abaixo da frase.
+Prometer cinco e mostrar três seria desmentido pela própria seção seguinte.
+
+Isto é uma decisão a tomar, não um detalhe de redação:
+
+- **Se o instrumento deve ter cinco campos**, faltam dois — e é preciso definir
+  quais, porque RF-05 e RF-06 só precisam dos três atuais. A copy volta para
+  "cinco" junto com a implementação.
+- **Se três está certo**, o documento de oferta é que precisa ser atualizado,
+  incluindo o kit e qualquer material que já cite cinco.
+
+Enquanto não se decide, produto e página estão coerentes entre si.
+
 ## Premissas que precisam da sua confirmação
 
 **As fórmulas de RF-05 e RF-06 foram inferidas.** O documento v0.4 assume as

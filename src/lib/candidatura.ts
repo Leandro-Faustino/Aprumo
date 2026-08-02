@@ -3,9 +3,12 @@ import { z } from "zod";
 /**
  * Candidatura à turma fundadora (§16).
  *
- * Cinco campos, no máximo — e cinco campos para um produto de cinco campos
- * também é coerência. Os dois últimos fazem duas coisas ao mesmo tempo:
+ * Cinco campos, no máximo. Os dois últimos fazem duas coisas ao mesmo tempo:
  * filtram a agenda e produzem dado de descoberta antes da conversa.
+ *
+ * (O documento de oferta descreve o instrumento como sendo de cinco campos; ele
+ * tem três. A copy da página segue o produto, não o documento — ver o aviso no
+ * README. Se o instrumento crescer para cinco, a copy volta atrás.)
  */
 
 export const FAIXAS_CARTEIRA = [

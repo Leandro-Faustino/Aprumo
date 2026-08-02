@@ -140,7 +140,7 @@ export function Hero() {
       </h1>
 
       <p className="mt-5 text-lg text-slate-600 dark:text-slate-300">
-        Cinco números que ele já tem viram uma constatação que abre pauta técnica
+        Três números que ele já tem viram uma constatação que abre pauta técnica
         — com a sua marca em cima e o seu CRC embaixo.
       </p>
 

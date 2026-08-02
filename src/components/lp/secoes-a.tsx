@@ -65,7 +65,7 @@ export function Problema() {
  * §5 — o mecanismo, demonstrado. A seção mais importante da página.
  *
  * Substitui prova social por demonstração: não há depoimento, mas há um produto
- * que se explica sozinho em cinco campos. O instrumento cabe inteiro aqui, e em
+ * que se explica sozinho em três campos. O instrumento cabe inteiro aqui, e em
  * noventa segundos o leitor entendeu tudo sem ler copy.
  *
  * Sem e-mail para liberar a demo — pedir cadastro aqui contradiria a página.
@@ -73,7 +73,7 @@ export function Problema() {
 export function Mecanismo() {
   return (
     <Secao id="demo">
-      <TituloSecao>Preencha cinco campos. É exatamente o que o seu cliente vai ver.</TituloSecao>
+      <TituloSecao>Preencha três campos. É exatamente o que o seu cliente vai ver.</TituloSecao>
       <p className="mt-4 text-slate-600 dark:text-slate-300">
         Use números de um cliente seu, os do seu próprio escritório, ou invente.
         Nada do que você digitar sai deste navegador.
@@ -219,7 +219,7 @@ export function ComoFunciona() {
         </h3>
         <p className="mt-2 text-slate-600 dark:text-slate-300">
           No modo assistido, você preenche junto com o cliente, ao telefone. São
-          cinco perguntas. Se a sua carteira não é de gente que clica em link,
+          três perguntas. Se a sua carteira não é de gente que clica em link,
           esse é o caminho — e continua sendo uma conversa que você abriu com um
           motivo técnico.
         </p>
