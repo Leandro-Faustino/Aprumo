@@ -1,16 +1,26 @@
 # Aprumo — Diagnóstico de 90 dias
 
-Página de diagnóstico financeiro white-label para contadores. O cliente final
-informa três números do último mês e recebe, na hora, o resultado e uma pergunta
-final — nunca uma recomendação. O contador distribui a página com a própria marca
-e recebe o contato por WhatsApp.
+Diagnóstico financeiro white-label para contadores. O contador cria uma conta,
+configura a marca e recebe um link próprio. O cliente final abre esse link,
+informa três números do último mês e vê na hora o resultado e uma pergunta
+final — nunca uma recomendação. O contato volta pelo WhatsApp.
 
 Implementa os requisitos v0.4 (RF-09 revisado, seções 4.5 a 4.7).
 
 ## Stack
 
 Next.js 16 (App Router) · React 19 · TypeScript · Tailwind CSS v4 · Prisma 7 ·
-Supabase (Postgres) · Vitest
+Supabase (Postgres + Auth) · Vitest
+
+## Rotas
+
+| Rota | Acesso | O que é |
+|---|---|---|
+| `/` | Pública | Entrada do produto |
+| `/entrar` | Pública | Login por link mágico (sem senha) |
+| `/auth/confirmar` | Pública | Troca o token do e-mail por sessão |
+| `/painel` | **Autenticada** | Configuração da marca do contador (RF-30) |
+| `/d/<slug>` | Pública | A página de diagnóstico que o cliente final abre |
 
 ## A decisão de arquitetura que explica o resto
 
@@ -29,6 +39,38 @@ Dois testes guardam isso: `whatsapp.test.ts` verifica que a mensagem de handoff
 não carrega valor algum, e o smoke test de browser confirma que nenhuma
 requisição de rede leva os números digitados.
 
+Autenticação não muda nada disso: ela protege a configuração de marca, não o
+diagnóstico. A página `/d/<slug>` continua pública e anônima — é o produto.
+
+## Isolamento entre contadores
+
+Um contador só alcança a própria empresa. Três camadas, em ordem de importância:
+
+1. **O DAL (`src/lib/dal.ts`) é a autorização de verdade.** Nenhuma função dele
+   aceita id de empresa vindo do cliente — o dono sai sempre da sessão verificada
+   no servidor, e toda consulta filtra por `ownerId`. `salvarMinhaEmpresa` faz
+   `upsert` pela condição do dono, então não existe caminho por onde uma escrita
+   alcance a linha de outra pessoa.
+2. **RLS no banco fecha a porta lateral.** O Supabase publica o schema `public`
+   via PostgREST usando a chave anônima, que é pública por design — vai no bundle
+   do navegador. Sem RLS, qualquer pessoa com essa chave leria a tabela direto,
+   passando por cima da aplicação inteira. As políticas estão na migration
+   inicial. O Prisma conecta com o papel dono da tabela e não é afetado por elas,
+   que é por isso que a camada 1 continua sendo a principal.
+3. **O `proxy.ts` é só conveniência.** Ele renova a sessão e desvia navegação,
+   mas a própria documentação do Next diz que proxy não serve como autorização —
+   e aqui ele nem consulta o banco. Se o proxy sumisse, `/painel` continuaria
+   protegido pelo DAL. Isso está verificado: sem Supabase configurado o proxy sai
+   na primeira linha, e `/painel` ainda assim redireciona para `/entrar`.
+
+`sessaoAtual()` chama `connection()` para impedir que uma página protegida seja
+pré-renderizada no build — sem isso, um build sem sessão congelaria a decisão de
+autorização no HTML estático.
+
+O login é por link mágico: não há senha armazenada, nem fluxo de recuperação.
+A tela de login responde a mesma coisa para e-mail cadastrado e não cadastrado,
+para não revelar quem tem conta.
+
 ## Rodando
 
 ```bash
@@ -37,23 +79,35 @@ cp .env.example .env    # nada obrigatório para começar
 npm run dev
 ```
 
-Sem `DATABASE_URL` a aplicação roda inteira usando o fallback de ambiente — é o
-caso do contador único. `/` usa a marca das variáveis `NEXT_PUBLIC_MARCA_*`.
+Sem Supabase configurado o produto sobe e a página de diagnóstico funciona
+(`/d/<qualquer-slug>` cai no fallback das variáveis `NEXT_PUBLIC_MARCA_*`), mas
+`/entrar` e `/painel` ficam indisponíveis — com aviso na tela, não com erro.
 
-### Com Supabase (vários contadores no mesmo deploy)
+### Ligando o Supabase
 
 1. Crie um projeto em [supabase.com](https://supabase.com).
-2. Copie a connection string em *Project Settings → Database → Connection string → URI*
-   para `DATABASE_URL` (porta `6543`, do pooler, em serverless; `5432` para migrations).
-3. Aplique o schema e popule dois exemplos:
+2. Em *Project Settings → API*, copie a URL e a chave pública (anon/publishable)
+   para `NEXT_PUBLIC_SUPABASE_URL` e `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
+3. Em *Project Settings → Database → Connection string → URI*, copie para
+   `DATABASE_URL` (porta `6543`, do pooler, em serverless; `5432` para migrations).
+4. Defina `NEXT_PUBLIC_SITE_URL` com a URL pública do site.
+5. Em *Authentication → URL Configuration*, adicione
+   `<SITE_URL>/auth/confirmar` às **Redirect URLs**. Sem isso o link do e-mail
+   é recusado pelo Supabase.
+6. Aplique o schema:
 
 ```bash
-npm run db:migrate
-npm run db:seed
+npm run db:migrate     # cria a tabela e as políticas de RLS
+npm run db:seed        # opcional: duas empresas de exemplo
 ```
 
-Cada contador vira uma linha em `contadores` e ganha sua página em `/d/<slug>` —
-`/d/silva-contabil` (completo) e `/d/minimo` (só o obrigatório) vêm no seed.
+A partir daí, cada contador que entra cria a própria empresa pelo `/painel` e
+ganha sua página em `/d/<slug>`.
+
+> **Atenção no deploy:** variáveis `NEXT_PUBLIC_*` são embutidas no bundle
+> durante o build, não lidas em runtime. Um build feito sem elas gera uma
+> aplicação em que o login nunca funciona, mesmo que a variável exista no
+> servidor depois.
 
 ### Comandos
 
@@ -61,7 +115,7 @@ Cada contador vira uma linha em `contadores` e ganha sua página em `/d/<slug>` 
 |---|---|
 | `npm run dev` | Servidor de desenvolvimento |
 | `npm run build` | `prisma generate` + build de produção |
-| `npm test` | Testes do núcleo (53 casos) |
+| `npm test` | Testes do núcleo e de validação (91 casos) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run db:migrate` | Cria/aplica migration |
 | `npm run db:seed` | Popula contadores de exemplo |
@@ -78,7 +132,8 @@ Cada contador vira uma linha em `contadores` e ganha sua página em `/d/<slug>` 
 | RF-21 — handoff WhatsApp | `src/lib/diagnostico/whatsapp.ts` |
 | RF-23 / RNF-05 — nada trafega | núcleo puro; aviso em `prisma/schema.prisma` |
 | RF-24/25/26 — roteiro de conversa | `kit/roteiro-de-conversa.md` (conteúdo, não software) |
-| RF-30 — bloco único de marca | `src/lib/marca.ts` + modelo `Contador` |
+| RF-30 — bloco único de marca | `/painel` + `src/lib/empresa.ts` + modelo `Contador` |
+| Login e isolamento por conta | `src/lib/dal.ts`, `src/proxy.ts`, RLS na migration |
 | RF-32 — degradação | `pagina-diagnostico.tsx` + testes em `whatsapp.test.ts` |
 
 Os cinco casos da tabela do RF-09 estão em `cenario.test.ts` um a um, incluindo o
@@ -87,6 +142,27 @@ caso 5 (fôlego exatamente 30 **não** é urgente — o limite é `<`, não `<=`
 A regra de nomenclatura do RF-09 — nenhum CTA pode conter verbo imperativo de
 ação financeira — é um teste automatizado, não um comentário. Um texto novo com
 "reduza", "negocie" ou "controle" quebra a suíte.
+
+## O que o login ainda NÃO teve verificado
+
+Esta parte foi escrita sem nenhuma instância Supabase disponível. O que está
+verificado e o que não está:
+
+**Verificado em navegador real:** `/painel` sem sessão redireciona para
+`/entrar` (inclusive com o proxy desligado, provando que o DAL segura sozinho);
+a tela de login renderiza e valida o e-mail; sem Supabase o envio avisa em vez de
+quebrar; a página de diagnóstico segue intacta. Mais 91 testes automatizados,
+entre eles a barreira contra redirecionamento aberto e as regras de slug.
+
+**NÃO verificado, porque exige uma instância de verdade:** o envio do e-mail, o
+link mágico chegando e sendo trocado por sessão, o `upsert` da empresa no banco,
+a renovação de token pelo proxy, e as políticas de RLS de fato barrando acesso
+pela chave anônima. A migration também nunca foi aplicada contra um Postgres —
+foi gerada offline com `prisma migrate diff`.
+
+Ou seja: o caminho de acesso negado está testado; o caminho de acesso concedido
+está escrito, mas não exercitado. Ao ligar o Supabase, esses são os pontos a
+conferir primeiro.
 
 ## Premissas que precisam da sua confirmação
 

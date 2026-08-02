@@ -20,6 +20,17 @@ datasource db {
 model Contador {
   id String @id @default(uuid())
 
+  /// Dono da empresa: o `id` do usuário em `auth.users` (Supabase Auth).
+  ///
+  /// `@unique` implementa "uma empresa por conta". Toda leitura e escrita
+  /// autenticada é filtrada por este campo no DAL (`src/lib/dal.ts`) — é ele
+  /// que garante que um contador nunca alcança a empresa de outro.
+  ///
+  /// Sem chave estrangeira porque `auth.users` pertence ao schema do Supabase,
+  /// fora do controle deste schema. A integridade é mantida pelo fluxo: só o
+  /// DAL escreve aqui, e sempre com o id do usuário já autenticado.
+  ownerId String @unique @map("owner_id") @db.Uuid
+
   /// Identificador da página pública: /d/<slug>
   slug String @unique
 
