@@ -177,7 +177,7 @@ function Resultado({
   linkWhatsapp: string | null;
   aoRecomecar: () => void;
 }) {
-  const { diferenca, folegoDias, cenario, cta } = resultado;
+  const { diferenca, folegoDias, projecao, cenario, cta } = resultado;
   const negativo = diferenca < 0;
 
   return (
@@ -203,6 +203,41 @@ function Resultado({
           <p className="text-2xl font-semibold tabular-nums text-slate-900 dark:text-slate-50">
             {formatarDias(folegoDias)}
           </p>
+        </div>
+      )}
+
+      {projecao && (
+        <div className="space-y-3">
+          <div>
+            <p className="font-medium text-slate-900 dark:text-slate-100">
+              Se os próximos três meses forem iguais a este
+            </p>
+            {/* A ressalva não é rodapé: sem ela a extrapolação vira previsão. */}
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              É uma conta de repetição, não uma previsão — serve para enxergar
+              para onde o mês aponta.
+            </p>
+          </div>
+
+          <ul className="divide-y divide-slate-200 rounded-xl bg-slate-100 px-5 dark:divide-slate-700 dark:bg-slate-800/60">
+            {projecao.map((marco) => (
+              <li key={marco.dias} className="flex items-baseline justify-between py-3">
+                <span className="text-slate-600 dark:text-slate-300">
+                  em {formatarDias(marco.dias)}
+                </span>
+                <span
+                  className={`text-lg font-semibold tabular-nums ${
+                    marco.saldoProjetado < 0
+                      ? "text-rose-700 dark:text-rose-300"
+                      : "text-slate-900 dark:text-slate-50"
+                  }`}
+                >
+                  {marco.saldoProjetado < 0 ? "− " : ""}
+                  {formatarMoedaAbsoluta(marco.saldoProjetado)}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

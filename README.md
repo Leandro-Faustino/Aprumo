@@ -61,7 +61,7 @@ Cada contador vira uma linha em `contadores` e ganha sua página em `/d/<slug>` 
 |---|---|
 | `npm run dev` | Servidor de desenvolvimento |
 | `npm run build` | `prisma generate` + build de produção |
-| `npm test` | Testes do núcleo (42 casos) |
+| `npm test` | Testes do núcleo (53 casos) |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run db:migrate` | Cria/aplica migration |
 | `npm run db:seed` | Popula contadores de exemplo |
@@ -72,6 +72,7 @@ Cada contador vira uma linha em `contadores` e ganha sua página em `/d/<slug>` 
 |---|---|
 | RF-05 — diferença | `src/lib/diagnostico/calculo.ts` |
 | RF-06 — fôlego em dias | `src/lib/diagnostico/calculo.ts` |
+| RF-07 — projeção de 90 dias (**proposto**) | `src/lib/diagnostico/projecao.ts` |
 | RF-08 — tom não-acusatório | `ROTULO_CENARIO` em `cenario.ts` e textos da UI |
 | RF-09 — CTA por cenário | `src/lib/diagnostico/cenario.ts` + `cenario.test.ts` |
 | RF-21 — handoff WhatsApp | `src/lib/diagnostico/whatsapp.ts` |
@@ -105,11 +106,33 @@ Uma decisão derivada, para revisar: quando o saldo em caixa não é informado,
 negativa. Sem o dado não dá para afirmar que o fôlego é curto, e classificar como
 urgente quem apenas não preencheu um campo opcional violaria o RF-08.
 
+### RF-07 é uma proposta, e precisa da sua confirmação
+
+O texto da seção 4.4 da v0.3 não existe em lugar nenhum do material disponível —
+o v0.4 cita o RF-07 só pelo identificador. O que está implementado é uma
+**proposta de leitura**, apoiada em duas evidências: o produto se chama
+"Diagnóstico de 90 dias" mas nenhuma grandeza olhava para 90 dias, e a seção 4.4
+ocupa exatamente a posição entre o fôlego (4.3) e o encerramento (4.5).
+
+A proposta: projetar o saldo em caixa em 30, 60 e 90 dias, supondo que o ritmo do
+mês analisado se repita — `saldo + diferença × (dias ÷ 30)`.
+
+Três pontos que valem sua atenção:
+
+1. **Se a v0.3 disser outra coisa, o custo de trocar é baixo de propósito.** Todo
+   o RF-07 vive em `projecao.ts` e `projecao.test.ts`. Ele consome valores já
+   prontos e é aditivo na tela — nada de RF-05, RF-06 ou RF-09 depende dele.
+2. **A projeção usa a diferença líquida, o fôlego do RF-06 usa só as saídas.** São
+   perguntas diferentes de propósito ("se nada mais entrar, quanto dura" versus
+   "se o mês se repetir, onde chego"), e a tela mostra as duas com rótulos
+   distintos. Se isso confundir na validação com contadores, o candidato a sair
+   é o RF-06, que é o menos ligado ao nome do produto.
+3. **É extrapolação, não previsão** — e a ressalva está na tela, não em rodapé.
+   Sem ela o número vira conselho financeiro travestido de projeção, o que
+   cruzaria a mesma linha que o RF-09 evita.
+
 ## O que ficou de fora
 
-- **RF-07** — citado na v0.4 como herdado da v0.3, mas sem texto disponível.
-  Não foi implementado para não inventar requisito; é o próximo item assim que a
-  redação chegar.
 - **RF-30, critério dos 2 minutos** — o critério de aceite é medido em teste de
   usabilidade com contadores, não em código. O que dá para garantir aqui está
   garantido: um bloco único, campos opcionais com default, nenhuma edição de
