@@ -22,11 +22,19 @@ export type EntradaDiagnostico = {
 /** Cenário de resultado — chave compartilhada entre RF-09 (CTA) e RF-24 (roteiro). */
 export type Cenario = "urgente" | "atencao" | "estavel";
 
+/** Um ponto da projeção de 90 dias (RF-07 proposto — ver `projecao.ts`). */
+export type Marco = {
+  dias: number;
+  saldoProjetado: number;
+};
+
 export type ResultadoDiagnostico = {
   /** RF-05 */
   diferenca: number;
   /** RF-06 — `null` quando não há dados suficientes para calcular. */
   folegoDias: number | null;
+  /** RF-07 (proposto) — `null` sem saldo em caixa informado. */
+  projecao: Marco[] | null;
   /** RF-09 */
   cenario: Cenario;
   /** RF-09 — pergunta final, nunca recomendação. */
